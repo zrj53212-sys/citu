@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AI单词">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="description" content="AI领域常用英语单词 · 场景记忆 · 约300词">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <title>AI场景记忆 · 英语单词（300词）</title>
+  <style>
+    :root{--bg:#0f172a;--card:#1e293b;--accent:#38bdf8;--accent2:#a78bfa;--text:#f1f5f9;--muted:#94a3b8;--success:#34d399;--danger:#f87171;--radius:16px}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:12px;line-height:1.5}
+    header{width:100%;max-width:480px;text-align:center;padding:16px 0 8px}
+    header h1{font-size:1.35rem;font-weight:700;background:linear-gradient(90deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+    header p{color:var(--muted);font-size:.85rem;margin-top:4px}
+    .stats{display:flex;gap:10px;justify-content:center;margin:12px 0;flex-wrap:wrap}
+    .stat{background:var(--card);padding:6px 12px;border-radius:999px;font-size:.78rem;color:var(--muted)}
+    .stat strong{color:var(--accent)}
+    .filters{display:flex;gap:6px;margin-bottom:12px;flex-wrap:wrap;justify-content:center}
+    .filter-btn{background:var(--card);border:1px solid transparent;color:var(--muted);padding:5px 11px;border-radius:999px;font-size:.75rem;cursor:pointer}
+    .filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(56,189,248,.12)}
+    .progress-bar{width:100%;max-width:420px;height:5px;background:var(--card);border-radius:999px;margin:8px 0;overflow:hidden}
+    .progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));border-radius:999px;transition:width .3s}
+    .card-container{width:100%;max-width:420px;perspective:1200px;margin-bottom:16px}
+    .card{width:100%;min-height:400px;position:relative;transform-style:preserve-3d;transition:transform .55s cubic-bezier(.4,0,.2,1);cursor:pointer}
+    .card.flipped{transform:rotateY(180deg)}
+    .card-face{position:absolute;width:100%;height:100%;backface-visibility:hidden;border-radius:var(--radius);background:var(--card);padding:22px 18px;display:flex;flex-direction:column;box-shadow:0 10px 40px rgba(0,0,0,.4);overflow-y:auto}
+    .card-front{justify-content:center;align-items:center;text-align:center}
+    .card-back{transform:rotateY(180deg)}
+    .word{font-size:1.9rem;font-weight:700;letter-spacing:-.4px;margin-bottom:6px}
+    .phonetic{color:var(--accent);font-size:.95rem;margin-bottom:12px}
+    .category-tag{display:inline-block;padding:3px 10px;border-radius:999px;font-size:.68rem;font-weight:600;margin-bottom:14px}
+    .cat-foundations{background:rgba(56,189,248,.18);color:#7dd3fc}
+    .cat-architecture{background:rgba(167,139,250,.2);color:#c4b5fd}
+    .cat-llm{background:rgba(52,211,153,.18);color:#6ee7b7}
+    .cat-agent{background:rgba(251,146,60,.18);color:#fdba74}
+    .cat-training{background:rgba(244,114,182,.18);color:#f9a8d4}
+    .cat-eval{background:rgba(248,113,113,.18);color:#fca5a5}
+    .cat-infra{background:rgba(148,163,184,.2);color:#cbd5e1}
+    .scene-box{background:rgba(15,23,42,.55);border-left:3px solid var(--accent2);padding:12px 14px;border-radius:0 10px 10px 0;margin:12px 0;font-size:.9rem;color:#e2e8f0}
+    .scene-box .label{font-size:.68rem;color:var(--accent2);letter-spacing:.5px;margin-bottom:5px;display:block}
+    .definition{font-size:1rem;margin-bottom:8px;color:#e2e8f0}
+    .example{font-size:.85rem;color:var(--muted);font-style:italic;border-top:1px solid rgba(148,163,184,.2);padding-top:10px;margin-top:6px}
+    .actions{display:flex;gap:10px;width:100%;max-width:420px}
+    .btn{flex:1;padding:13px;border:none;border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer}
+    .btn-know{background:var(--success);color:#064e3b}
+    .btn-unknown{background:var(--danger);color:#7f1d1d}
+    .btn-next{background:var(--card);color:var(--text);border:1px solid rgba(148,163,184,.3);margin-top:10px;width:100%;max-width:420px;padding:12px;border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer}
+    #installBtn{display:none;margin-top:14px;width:100%;max-width:420px;padding:13px;border:none;border-radius:12px;font-size:.95rem;font-weight:600;cursor:pointer;background:linear-gradient(90deg,#38bdf8,#a78bfa);color:#0f172a}
+    footer{margin-top:auto;padding:16px;font-size:.72rem;color:var(--muted);text-align:center}
+    .empty{text-align:center;color:var(--muted);padding:50px 20px}
+    @media(max-width:400px){.word{font-size:1.6rem}.card{min-height:360px}}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🧠 AI场景记忆 · 英语单词</h1>
+    <p>约 207 个AI领域常用词 · 图像场景记忆</p>
+  </header>
+  <div class="stats">
+    <div class="stat">已学 <strong id="learned">0</strong></div>
+    <div class="stat">待学 <strong id="remaining">0</strong></div>
+    <div class="stat">生词 <strong id="review">0</strong></div>
+  </div>
+  <div class="filters">
+    <button class="filter-btn active" data-cat="all">全部</button>
+    <button class="filter-btn" data-cat="foundations">基础</button>
+    <button class="filter-btn" data-cat="architecture">架构</button>
+    <button class="filter-btn" data-cat="llm">LLM</button>
+    <button class="filter-btn" data-cat="agent">智能体</button>
+    <button class="filter-btn" data-cat="training">训练</button>
+    <button class="filter-btn" data-cat="eval">评估安全</button>
+    <button class="filter-btn" data-cat="infra">部署运维</button>
+  </div>
+  <div class="progress-bar"><div class="progress-fill" id="progress" style="width:0%"></div></div>
+  <div class="card-container" id="cardContainer">
+    <div class="card" id="card">
+      <div class="card-face card-front">
+        <div class="category-tag" id="frontTag">AI</div>
+        <div class="word" id="frontWord">Loading...</div>
+        <div class="phonetic" id="frontPhonetic"></div>
+        <p style="color:var(--muted);font-size:.82rem;margin-top:16px">点击卡片翻转 · 场景记忆</p>
+      </div>
+      <div class="card-face card-back">
+        <div class="category-tag" id="backTag">AI</div>
+        <div class="word" id="backWord" style="font-size:1.35rem"></div>
+        <div class="phonetic" id="backPhonetic"></div>
+        <div class="definition" id="definition"></div>
+        <div class="scene-box"><span class="label">🎬 场景画面</span><span id="scene"></span></div>
+        <div class="example" id="example"></div>
+      </div>
+    </div>
+  </div>
+  <div class="actions">
+    <button class="btn btn-unknown" id="btnUnknown">😕 不认识</button>
+    <button class="btn btn-know" id="btnKnow">😊 认识了</button>
+  </div>
+  <button class="btn-next" id="btnNext">下一张 →</button>
+  <button id="installBtn">📲 安装到主屏幕</button>
+  <footer>本地进度自动保存 · 支持离线 · 可安装为PWA</footer>
+<script>
+const WORDS=[
+{word:'AI',phonetic:'/ˌeɪˈaɪ/',category:'foundations',definition:'人工智能——让机器完成通常需要人类智能的任务',scene:'会思考、会学习的机器人，能看图、听话、做决定。',example:'AI is transforming every industry.'},
+{word:'Machine Learning',phonetic:'/məˈʃiːn ˈlɜːrnɪŋ/',category:'foundations',definition:'机器学习——让计算机从数据中学习规律而非写死规则',scene:'小孩看很多猫照片后自己学会认猫。',example:'Machine learning powers recommendation systems.'},
+{word:'Deep Learning',phonetic:'/diːp ˈlɜːrnɪŋ/',category:'foundations',definition:'深度学习——用多层神经网络学习复杂模式',scene:'大脑多层神经元：边缘→形状→物体。',example:'Deep learning drives modern computer vision.'},
+{word:'Supervised Learning',phonetic:'/ˈsuːpəvaɪzd/',category:'foundations',definition:'监督学习——用带标签数据训练模型',scene:'老师批改作业，学生照着学。',example:'Supervised learning needs labeled data.'},
+{word:'Unsupervised Learning',phonetic:'/ʌnˈsuːpəvaɪzd/',category:'foundations',definition:'无监督学习——从无标签数据中找模式',scene:'给学生一堆照片让自己分组。',example:'Clustering is unsupervised learning.'},
+{word:'Reinforcement Learning',phonetic:'/ˌriːɪnˈfɔːsmənt/',category:'foundations',definition:'强化学习——通过奖励与惩罚学会行动',scene:'训狗：做对给零食，做错不给。',example:'RL is used in robotics and games.'},
+{word:'Self-Supervised Learning',phonetic:'/self/',category:'foundations',definition:'自监督学习——模型自己从数据生成标签',scene:'挖掉句子里的词让模型猜。',example:'Self-supervised learning powers LLM pretraining.'},
+{word:'Semi-Supervised Learning',phonetic:'/ˌsemi/',category:'foundations',definition:'半监督学习——少量标签+大量无标签一起训练',scene:'老师只批几本，其余自己摸索。',example:'Semi-supervised cuts labeling cost.'},
+{word:'Transfer Learning',phonetic:'/ˈtrænsfɜː/',category:'foundations',definition:'迁移学习——把已学知识迁移到新任务',scene:'会骑车的人学摩托车更快。',example:'Transfer learning reduces training cost.'},
+{word:'Generative AI',phonetic:'/ˈdʒenərətɪv/',category:'foundations',definition:'生成式AI——能创造新内容的AI',scene:'自己画出从未存在的猫。',example:'Generative AI creates text, images and code.'},
+{word:'Foundation Model',phonetic:'/faʊnˈdeɪʃn/',category:'foundations',definition:'基础模型——海量通用数据预训练、可适配多任务的大模型',scene:'超大乐高底板，可搭任何东西。',example:'GPT and Claude are foundation models.'},
+{word:'AGI',phonetic:'/ˌeɪˌdʒiːˈaɪ/',category:'foundations',definition:'通用人工智能——多任务达到或超越人类水平的AI目标',scene:'能像人一样灵活学任何新技能的AI。',example:'AGI remains a long-term goal.'},
+{word:'ANI',phonetic:'/ˌeɪˌenˈaɪ/',category:'foundations',definition:'狭义人工智能——只擅长单一任务的AI',scene:'只会下围棋或认人脸的系统。',example:'Most current AI is ANI.'},
+{word:'Dataset',phonetic:'/ˈdeɪtəset/',category:'foundations',definition:'数据集——训练/验证/测试用的数据集合',scene:'一箱标好标签的照片。',example:'A high-quality dataset is critical.'},
+{word:'Feature',phonetic:'/ˈfiːtʃə/',category:'foundations',definition:'特征——模型使用的可测量输入变量',scene:'年龄、身高、收入就是特征。',example:'Feature engineering improves performance.'},
+{word:'Label',phonetic:'/ˈleɪbl/',category:'foundations',definition:'标签——监督学习中的正确输出',scene:'照片旁写着「猫」的字。',example:'Labeled data is expensive.'},
+{word:'Algorithm',phonetic:'/ˈælɡərɪðəm/',category:'foundations',definition:'算法——解决问题的步骤规则',scene:'菜谱就是做菜的算法。',example:'Gradient descent is an algorithm.'},
+{word:'Model',phonetic:'/ˈmɒdl/',category:'foundations',definition:'模型——训练后能做预测的系统',scene:'学完后会认猫的程序。',example:'Deploy the trained model to production.'},
+{word:'Inference',phonetic:'/ˈɪnfərəns/',category:'foundations',definition:'推理——用已训练模型生成结果',scene:'上学是训练，工作是推理。',example:'Inference is charged per token.'},
+{word:'Training',phonetic:'/ˈtreɪnɪŋ/',category:'foundations',definition:'训练——从数据学习参数的过程',scene:'反复做题订正错误。',example:'Training a large model is expensive.'},
+{word:'Overfitting',phonetic:'/ˌəʊvəˈfɪtɪŋ/',category:'foundations',definition:'过拟合——把训练数据记得太死、泛化差',scene:'只背例题，换新题就不会。',example:'Dropout reduces overfitting.'},
+{word:'Underfitting',phonetic:'/ˌʌndəˈfɪtɪŋ/',category:'foundations',definition:'欠拟合——模型太简单学不好',scene:'用直线拟合复杂曲线。',example:'Increase capacity to fix underfitting.'},
+{word:'Bias',phonetic:'/ˈbaɪəs/',category:'foundations',definition:'偏差——系统性偏离或数据偏见',scene:'秤总是少称一点。',example:'Data bias can harm fairness.'},
+{word:'Variance',phonetic:'/ˈveəriəns/',category:'foundations',definition:'方差——对数据变化的敏感程度',scene:'分数忽高忽低。',example:'High variance often means overfitting.'},
+{word:'Normalization',phonetic:'/ˌnɔːməlaɪˈzeɪʃn/',category:'foundations',definition:'归一化——把数据缩放到统一范围',scene:'把不同身高缩到同一比例。',example:'Batch norm stabilizes training.'},
+{word:'Regularization',phonetic:'/ˌreɡjʊləraɪˈzeɪʃn/',category:'foundations',definition:'正则化——防止过拟合的技术',scene:'给模型加点惩罚不让记太死。',example:'Weight decay is regularization.'},
+{word:'Feature Engineering',phonetic:'/ˈfiːtʃə/',category:'foundations',definition:'特征工程——设计有用输入特征',scene:'把原料加工成更好食材。',example:'Good features beat complex models.'},
+{word:'Cross-Validation',phonetic:'/krɒs/',category:'foundations',definition:'交叉验证——轮流当验证集评估模型',scene:'轮流当考官更公平。',example:'K-fold cross-validation is standard.'},
+{word:'Ensemble',phonetic:'/ɒnˈsɒmbl/',category:'foundations',definition:'集成学习——组合多个模型提升表现',scene:'三个臭皮匠顶个诸葛亮。',example:'Random forests are ensembles.'},
+{word:'Decision Tree',phonetic:'/dɪˈsɪʒn/',category:'foundations',definition:'决策树——用是/否问题做预测的树',scene:'流程图一路问到结论。',example:'Decision trees are interpretable.'},
+{word:'Random Forest',phonetic:'/ˈrændəm/',category:'foundations',definition:'随机森林——多棵决策树投票',scene:'一片树一起投票更稳。',example:'Random forests resist overfitting.'},
+{word:'Gradient Boosting',phonetic:'/ˈɡreɪdiənt/',category:'foundations',definition:'梯度提升——依次针对错误提升弱学习器',scene:'后一个补前一个的漏洞。',example:'XGBoost is popular boosting.'},
+{word:'K-Means',phonetic:'/keɪ miːnz/',category:'foundations',definition:'K均值聚类——把数据分成K个簇',scene:'自动把相似点归组。',example:'K-means is simple clustering.'},
+{word:'PCA',phonetic:'/ˌpiːsiːˈeɪ/',category:'foundations',definition:'主成分分析——降维并保留主要信息',scene:'高维压到主要方向。',example:'PCA reduces dimensionality.'},
+{word:'Neural Network',phonetic:'/ˈnjʊərəl/',category:'architecture',definition:'神经网络——多层互连神经元组成的模型',scene:'模仿大脑神经元传递信号。',example:'Neural networks power deep learning.'},
+{word:'Neuron',phonetic:'/ˈnjʊərɒn/',category:'architecture',definition:'神经元——单个计算单元',scene:'小开关，信号够强才往下传。',example:'Each neuron applies weights and activation.'},
+{word:'Layer',phonetic:'/ˈleɪə/',category:'architecture',definition:'层——同阶段处理数据的一组神经元',scene:'流水线的一站。',example:'Deeper layers capture higher features.'},
+{word:'Weight',phonetic:'/weɪt/',category:'architecture',definition:'权重——连接强度数值',scene:'调音台旋钮。',example:'Training adjusts millions of weights.'},
+{word:'Activation Function',phonetic:'/ˌæktɪˈveɪʃn/',category:'architecture',definition:'激活函数——决定是否/如何传递信号',scene:'门卫：信号够强才放行。',example:'ReLU is a popular activation.'},
+{word:'Backpropagation',phonetic:'/ˌbækprɒpəˈɡeɪʃn/',category:'architecture',definition:'反向传播——从误差反向计算如何调权重',scene:'从最后一题往前找错因。',example:'Backpropagation enables training.'},
+{word:'CNN',phonetic:'/ˌsiːenˈen/',category:'architecture',definition:'卷积神经网络——擅长图像的网络',scene:'小窗口滑动找边缘纹理。',example:'CNNs dominate computer vision.'},
+{word:'RNN',phonetic:'/ˌɑːrenˈen/',category:'architecture',definition:'循环神经网络——处理序列的早期架构',scene:'读句子记住前面的词。',example:'RNNs were common before transformers.'},
+{word:'LSTM',phonetic:'/ˌelestiːˈem/',category:'architecture',definition:'长短期记忆网络——更好记住长序列的RNN变体',scene:'带记忆门，重要信息多留一会。',example:'LSTMs helped longer sequences.'},
+{word:'Transformer',phonetic:'/trænsˈfɔːmə/',category:'architecture',definition:'Transformer——现代大模型核心架构',scene:'全班同时互相听，关注最相关的人。',example:'Transformers power modern LLMs.'},
+{word:'Attention',phonetic:'/əˈtenʃn/',category:'architecture',definition:'注意力机制——判断序列哪些部分更重要',scene:'阅读时盯关键词。',example:'Self-attention is key to transformers.'},
+{word:'Self-Attention',phonetic:'/self/',category:'architecture',definition:'自注意力——序列内每个位置关注其他位置',scene:'每个词看其他词决定如何理解。',example:'Self-attention enables parallelism.'},
+{word:'Multi-Head Attention',phonetic:'/ˈmʌlti hed/',category:'architecture',definition:'多头注意力——并行多组注意力',scene:'好几双眼睛不同角度观察。',example:'Multi-head captures diverse relations.'},
+{word:'Positional Encoding',phonetic:'/pəˈzɪʃənl/',category:'architecture',definition:'位置编码——告诉模型词的位置',scene:'给每个词贴「第几个」标签。',example:'Transformers need positional encoding.'},
+{word:'Encoder',phonetic:'/ɪnˈkəʊdə/',category:'architecture',definition:'编码器——把输入压缩成表示',scene:'长文压成精华摘要。',example:'The encoder understands input.'},
+{word:'Decoder',phonetic:'/diːˈkəʊdə/',category:'architecture',definition:'解码器——从表示生成输出',scene:'根据摘要写出完整句子。',example:'The decoder generates output.'},
+{word:'Residual Connection',phonetic:'/rɪˈzɪdjuəl/',category:'architecture',definition:'残差连接——输入跳过一层再相加',scene:'走捷径防止深层信息丢失。',example:'ResNets use residual connections.'},
+{word:'Mixture of Experts',phonetic:'/ˈmɪkstʃə/',category:'architecture',definition:'混合专家——只激活部分专家子网络',scene:'按问题找对应专家。',example:'MoE scales efficiently.'},
+{word:'Parameter',phonetic:'/pəˈræmɪtə/',category:'architecture',definition:'参数——模型内部学习的数值',scene:'几百亿个旋钮。',example:'A 70B model has 70 billion parameters.'},
+{word:'LoRA',phonetic:'/ˈlɔːrə/',category:'architecture',definition:'低秩适配——只训练少量新增矩阵微调',scene:'不改整书只加便利贴。',example:'LoRA makes fine-tuning cheap.'},
+{word:'Distillation',phonetic:'/ˌdɪstɪˈleɪʃn/',category:'architecture',definition:'知识蒸馏——小模型模仿大模型',scene:'老师浓缩知识教小学生。',example:'Distillation creates smaller models.'},
+{word:'Quantization',phonetic:'/ˌkwɒntaɪˈzeɪʃn/',category:'architecture',definition:'量化——更低精度表示权重',scene:'高清压成小文件。',example:'INT8 speeds up inference.'},
+{word:'Embedding',phonetic:'/ɪmˈbedɪŋ/',category:'architecture',definition:'嵌入向量——文字变成可算相似度的数字',scene:'词变成地图上的点，相近意思靠近。',example:'Embeddings power semantic search.'},
+{word:'Multimodal',phonetic:'/ˌmʌltiˈməʊdl/',category:'architecture',definition:'多模态——同时处理文字图像音频等',scene:'既能看图又能听声。',example:'GPT-4o is multimodal.'},
+{word:'Autoencoder',phonetic:'/ˌɔːtəʊɪnˈkəʊdə/',category:'architecture',definition:'自编码器——学习压缩再重建',scene:'压缩再解压逼它记精华。',example:'Autoencoders detect anomalies.'},
+{word:'GAN',phonetic:'/ɡæn/',category:'architecture',definition:'生成对抗网络——生成器与判别器对抗',scene:'伪造者与鉴宝师博弈。',example:'GANs generate realistic images.'},
+{word:'Diffusion Model',phonetic:'/dɪˈfjuːʒn/',category:'architecture',definition:'扩散模型——逐步去噪生成数据',scene:'从乱麻擦出清晰图。',example:'Stable Diffusion is a diffusion model.'},
+{word:'Vision Transformer',phonetic:'/ˈvɪʒn/',category:'architecture',definition:'视觉Transformer——图像切块后用Transformer',scene:'把图片当一串词来读。',example:'ViT brought transformers to vision.'},
+{word:'Flash Attention',phonetic:'/flæʃ/',category:'architecture',definition:'Flash Attention——更省显存更快的注意力',scene:'重排计算少搬数据。',example:'Flash Attention speeds training.'},
+{word:'GQA',phonetic:'/ˌdʒiːkjuːˈeɪ/',category:'architecture',definition:'分组查询注意力——减少KV头的高效注意力',scene:'多查询头共用键值。',example:'GQA is used in modern LLMs.'},
+{word:'RoPE',phonetic:'/rəʊp/',category:'architecture',definition:'旋转位置编码——用旋转编码位置',scene:'给向量转角度表示位置。',example:'RoPE is common in modern LLMs.'},
+{word:'Mamba',phonetic:'/ˈmæmbə/',category:'architecture',definition:'Mamba——基于状态空间的序列模型',scene:'另一种高效处理长序列的方式。',example:'Mamba is an alternative to transformers.'},
+{word:'LLM',phonetic:'/ˌelˌelˈem/',category:'llm',definition:'大语言模型——海量文本训练、能理解生成语言的大模型',scene:'超级图书管理员读过整个互联网。',example:'ChatGPT is powered by an LLM.'},
+{word:'Token',phonetic:'/ˈtəʊkən/',category:'llm',definition:'词元——处理文字的最小单位约0.75英文词',scene:'文字切成小积木。',example:'Pricing is per million tokens.'},
+{word:'Context Window',phonetic:'/ˈkɒntekst/',category:'llm',definition:'上下文窗口——一次能看到的最大token数',scene:'工作记忆容量，太长会忘前面。',example:'Larger context helps long documents.'},
+{word:'Prompt',phonetic:'/prɒmpt/',category:'llm',definition:'提示词——给模型的指令或问题',scene:'对精灵念的咒语。',example:'A clear prompt improves quality.'},
+{word:'System Prompt',phonetic:'/ˈsɪstəm/',category:'llm',definition:'系统提示——设定角色与规则的指令',scene:'给演员的人设和禁止事项。',example:'System prompt sets the persona.'},
+{word:'Temperature',phonetic:'/ˈtemprətʃə/',category:'llm',definition:'温度——控制随机性：低确定高创意',scene:'按菜谱 vs 即兴发挥。',example:'Lower temperature for deterministic answers.'},
+{word:'Top-p',phonetic:'/tɒp piː/',category:'llm',definition:'核采样——只从累积概率达p的词采样',scene:'在最可能的一撮里挑。',example:'Top-p balances creativity and coherence.'},
+{word:'Top-k',phonetic:'/tɒp keɪ/',category:'llm',definition:'Top-k采样——只从概率最高k个词采样',scene:'只在前k名里抽。',example:'Top-k limits candidates.'},
+{word:'Hallucination',phonetic:'/həˌluːsɪˈneɪʃn/',category:'llm',definition:'幻觉——自信生成错误或虚构内容',scene:'讲得绘声绘色但查无此事。',example:'Verify facts to catch hallucinations.'},
+{word:'RAG',phonetic:'/ræɡ/',category:'llm',definition:'检索增强生成——先检索外部知识再生成',scene:'开卷考试先翻笔记。',example:'RAG reduces hallucination.'},
+{word:'Fine-tuning',phonetic:'/faɪn ˈtjuːnɪŋ/',category:'llm',definition:'微调——在预训练模型上用特定数据继续训练',scene:'通才专门练爵士。',example:'Fine-tuned on legal documents.'},
+{word:'Instruction Tuning',phonetic:'/ɪnˈstrʌkʃn/',category:'llm',definition:'指令微调——训练模型更好遵循指令',scene:'教模型听懂人话。',example:'Instruction tuning makes models helpful.'},
+{word:'RLHF',phonetic:'/ˌɑːr el eɪtʃ ˈef/',category:'llm',definition:'人类反馈强化学习——用人偏好对齐模型',scene:'好回答给奖励。',example:'RLHF aligned ChatGPT.'},
+{word:'Zero-shot',phonetic:'/ˈzɪərəʊ ʃɒt/',category:'llm',definition:'零样本——不给示例直接完成任务',scene:'第一次见新题靠已有知识。',example:'Solved it zero-shot.'},
+{word:'Few-shot',phonetic:'/fjuː ʃɒt/',category:'llm',definition:'少样本——只给几个示例就学会',scene:'老师讲两道例题就会做。',example:'Few-shot prompting works well.'},
+{word:'In-Context Learning',phonetic:'/ɪn ˈkɒntekst/',category:'llm',definition:'上下文学习——不更新权重靠提示里例子学习',scene:'当场看例子就会。',example:'In-context learning needs no weight updates.'},
+{word:'Chain-of-Thought',phonetic:'/tʃeɪn/',category:'llm',definition:'思维链——一步步写出推理过程',scene:'解数学把草稿写出来。',example:'Chain-of-thought improves reasoning.'},
+{word:'Tree of Thoughts',phonetic:'/triː/',category:'llm',definition:'思维树——探索多条推理路径再选优',scene:'像下棋分支思考。',example:'Tree of Thoughts explores alternatives.'},
+{word:'Pretraining',phonetic:'/priːˈtreɪnɪŋ/',category:'llm',definition:'预训练——海量通用文本先学语言规律',scene:'先广泛阅读再专业深造。',example:'Pretraining creates the base model.'},
+{word:'Base Model',phonetic:'/beɪs/',category:'llm',definition:'基座模型——只预训练尚未指令微调',scene:'刚出厂原材料。',example:'Base models are for further fine-tuning.'},
+{word:'Chat Model',phonetic:'/tʃæt/',category:'llm',definition:'对话模型——针对多轮对话微调',scene:'会聊天的助手版。',example:'Chat models are tuned for conversation.'},
+{word:'Tokenizer',phonetic:'/ˈtəʊkənaɪzə/',category:'llm',definition:'分词器——把文本切成token',scene:'把句子拆成积木。',example:'Models use different tokenizers.'},
+{word:'BPE',phonetic:'/ˌbiːpiːˈiː/',category:'llm',definition:'字节对编码——常用子词分词方法',scene:'合并常见字母组合。',example:'Many LLMs use BPE.'},
+{word:'Latency',phonetic:'/ˈleɪtənsi/',category:'llm',definition:'延迟——从输入到开始输出的时间',scene:'点咖啡等待制作。',example:'Low latency is critical for chat.'},
+{word:'KV Cache',phonetic:'/keɪ viː kæʃ/',category:'llm',definition:'键值缓存——缓存注意力键值加速生成',scene:'中间结果存起来下次用。',example:'KV cache speeds decoding.'},
+{word:'Speculative Decoding',phonetic:'/spekˈjʊlətɪv/',category:'llm',definition:'推测解码——小模型先猜大模型验证加速',scene:'实习生起草老板批改。',example:'Speculative decoding reduces latency.'},
+{word:'Open Weights',phonetic:'/ˈəʊpən weɪts/',category:'llm',definition:'开放权重——参数公开可下载',scene:'菜谱秘方全公开。',example:'Llama is open-weights.'},
+{word:'Prompt Engineering',phonetic:'/prɒmpt/',category:'llm',definition:'提示工程——设计有效提示的技能',scene:'写咒语的艺术。',example:'Prompt engineering is practical skill.'},
+{word:'Structured Output',phonetic:'/ˈstrʌktʃəd/',category:'llm',definition:'结构化输出——强制输出JSON等固定格式',scene:'要求交表格不是作文。',example:'Structured output eases parsing.'},
+{word:'Max Tokens',phonetic:'/mæks/',category:'llm',definition:'最大token数——限制单次生成长度',scene:'作文不得超过多少字。',example:'Set max tokens to control cost.'},
+{word:'Stop Sequence',phonetic:'/stɒp/',category:'llm',definition:'停止序列——遇到特定字符串停止生成',scene:'看到句号就停笔。',example:'Stop sequences control boundaries.'},
+{word:'Repetition Penalty',phonetic:'/ˌrepɪˈtɪʃn/',category:'llm',definition:'重复惩罚——降低已出现token再被选中概率',scene:'不让翻来覆去说同一句。',example:'Repetition penalty reduces loops.'},
+{word:'Greedy Decoding',phonetic:'/ˈɡriːdi/',category:'llm',definition:'贪心解码——每步选概率最高的下一个token',scene:'每步挑当下最好。',example:'Greedy is fast but less diverse.'},
+{word:'Beam Search',phonetic:'/biːm/',category:'llm',definition:'束搜索——同时保留多条高分路径',scene:'同时走几条最有希望的路。',example:'Beam search common in translation.'},
+{word:'Context Engineering',phonetic:'/ˈkɒntekst/',category:'llm',definition:'上下文工程——决定放什么进上下文窗口',scene:'精心挑带进考场的资料。',example:'Context engineering matters as much as prompts.'},
+{word:'Lost in the Middle',phonetic:'/lɒst/',category:'llm',definition:'中间丢失——长上下文中中间信息易被忽略',scene:'三明治中间馅易忘。',example:'Models attend less to the middle.'},
+{word:'Vector Database',phonetic:'/ˈvektə/',category:'llm',definition:'向量数据库——存储检索嵌入向量的数据库',scene:'按意思相近搜索的图书馆。',example:'Vector DBs power RAG.'},
+{word:'Chunking',phonetic:'/ˈtʃʌŋkɪŋ/',category:'llm',definition:'分块——长文档切成适合检索的小段',scene:'书拆成页方便查找。',example:'Good chunking improves RAG.'},
+{word:'Hybrid Search',phonetic:'/ˈhaɪbrɪd/',category:'llm',definition:'混合检索——关键词+向量检索结合',scene:'既按字面又按意思搜。',example:'Hybrid often beats pure vector.'},
+{word:'Reranking',phonetic:'/riːˈræŋkɪŋ/',category:'llm',definition:'重排序——初检后再用更强模型精排',scene:'初选后再请专家精选。',example:'Rerankers improve relevance.'},
+{word:'Grounding',phonetic:'/ˈɡraʊndɪŋ/',category:'llm',definition:'落地有据——回答基于真实检索内容',scene:'回答必须有出处。',example:'Grounding reduces hallucination.'},
+{word:'Citation',phonetic:'/saɪˈteɪʃn/',category:'llm',definition:'引用——标明答案来源',scene:'脚注和参考文献。',example:'Ask for citations.'},
+{word:'Agent',phonetic:'/ˈeɪdʒənt/',category:'agent',definition:'智能体——能规划、调用工具、完成目标的系统',scene:'超级助理：你说目标它自己执行。',example:'An AI agent can book flights.'},
+{word:'Agentic',phonetic:'/əˈdʒentɪk/',category:'agent',definition:'智能体式的——具有自主决策与多步行动能力',scene:'不只回答还会自己行动。',example:'Agentic workflows are growing.'},
+{word:'Tool Use',phonetic:'/tuːl/',category:'agent',definition:'工具使用——模型请求运行时执行外部动作',scene:'说查天气系统真调API。',example:'Tool use turns chatbots into agents.'},
+{word:'Function Calling',phonetic:'/ˈfʌŋkʃn/',category:'agent',definition:'函数调用——返回可执行函数名和参数',scene:'写出get_weather而不是空话。',example:'Function calling enables actions.'},
+{word:'MCP',phonetic:'/ˌemsiːˈpiː/',category:'agent',definition:'模型上下文协议——标准化暴露工具与资源的协议',scene:'给工具统一插口。',example:'MCP lets agents discover tools.'},
+{word:'Orchestration',phonetic:'/ˌɔːkɪˈstreɪʃn/',category:'agent',definition:'编排——协调多模型工具步骤的流程',scene:'指挥家指挥乐队。',example:'LangGraph helps orchestration.'},
+{word:'Multi-Agent',phonetic:'/ˈmʌlti/',category:'agent',definition:'多智能体——多个智能体协作',scene:'有人搜索有人写有人检查。',example:'Multi-agent systems specialize roles.'},
+{word:'ReAct',phonetic:'/riˈækt/',category:'agent',definition:'推理+行动——交替推理与行动的模式',scene:'想一步做一步再观察。',example:'ReAct interleaves reasoning and acting.'},
+{word:'Agent Loop',phonetic:'/luːp/',category:'agent',definition:'智能体循环——观察-推理-行动-反馈反复',scene:'边看结果边决定下一步。',example:'The loop continues until the goal.'},
+{word:'Subagent',phonetic:'/sʌbˈeɪdʒənt/',category:'agent',definition:'子智能体——被主智能体调用的专用小智能体',scene:'项目经理分任务给专员。',example:'Subagents handle subtasks.'},
+{word:'Memory',phonetic:'/ˈmeməri/',category:'agent',definition:'记忆——跨步骤或会话保留的信息',scene:'笔记本下次还能翻。',example:'Agents need short and long-term memory.'},
+{word:'Planning',phonetic:'/ˈplænɪŋ/',category:'agent',definition:'规划——目标拆成可执行步骤',scene:'旅行前列行程。',example:'Good planning improves success.'},
+{word:'Guardrail',phonetic:'/ˈɡɑːdreɪl/',category:'agent',definition:'护栏——限制危险操作的安全机制',scene:'高速公路护栏。',example:'Guardrails keep agents safe.'},
+{word:'Human-in-the-Loop',phonetic:'/ˈhjuːmən/',category:'agent',definition:'人在回路——关键步骤需人类批准',scene:'重要决定必须你点头。',example:'HITL for high-stakes tasks.'},
+{word:'Eval',phonetic:'/ɪˈvæl/',category:'agent',definition:'评估——用测试衡量表现',scene:'考试成绩单。',example:'Run evals before shipping.'},
+{word:'Observability',phonetic:'/əbˌzɜːvəˈbɪləti/',category:'agent',definition:'可观测性——看到内部状态与轨迹',scene:'给黑盒装仪表盘。',example:'Observability helps debug agents.'},
+{word:'Harness',phonetic:'/ˈhɑːnɪs/',category:'agent',definition:'智能体运行时——把LLM接到真实世界的环境',scene:'给大脑接四肢和感官。',example:'Harness engineering is growing.'},
+{word:'Scaffolding',phonetic:'/ˈskæfəldɪŋ/',category:'agent',definition:'脚手架——围绕模型的循环工具安全代码',scene:'让模型能干活的支撑。',example:'Scaffolding provides the runtime.'},
+{word:'Approval',phonetic:'/əˈpruːvl/',category:'agent',definition:'批准——人类对敏感操作的确认',scene:'重要按钮必须你按。',example:'Require approval before irreversible acts.'},
+{word:'Sandbox',phonetic:'/ˈsændbɒks/',category:'agent',definition:'沙箱——隔离安全执行环境',scene:'安全围栏里试运行。',example:'Run untrusted code in a sandbox.'},
+{word:'Computer Use',phonetic:'/kəmˈpjuːtə/',category:'agent',definition:'计算机使用——智能体直接操作桌面',scene:'AI自己点鼠标敲键盘。',example:'Computer-use agents control desktops.'},
+{word:'Browser Use',phonetic:'/ˈbraʊzə/',category:'agent',definition:'浏览器使用——智能体操作网页',scene:'AI自己打开网页填表。',example:'Browser use enables web automation.'},
+{word:'State',phonetic:'/steɪt/',category:'agent',definition:'状态——当前环境与进度快照',scene:'游戏存档点。',example:'Agents maintain state across steps.'},
+{word:'Trajectory',phonetic:'/trəˈdʒektəri/',category:'agent',definition:'轨迹——一次任务的完整行动观察序列',scene:'一整条行动录像。',example:'Trajectories used for training and eval.'},
+{word:'Reflection',phonetic:'/rɪˈflekʃn/',category:'agent',definition:'反思——事后总结改进策略',scene:'考完写复盘。',example:'Reflection helps learn from mistakes.'},
+{word:'Critic',phonetic:'/ˈkrɪtɪk/',category:'agent',definition:'批评者——专门评估打分的模型',scene:'阅卷老师。',example:'A critic scores candidate answers.'},
+{word:'Verifier',phonetic:'/ˈverɪfaɪə/',category:'agent',definition:'验证器——检查结果是否正确',scene:'质检员。',example:'Verifiers catch errors.'},
+{word:'Skill',phonetic:'/skɪl/',category:'agent',definition:'技能——可复用能力或流程封装',scene:'可重复使用的招式。',example:'Skills package workflows.'},
+{word:'Routine',phonetic:'/ruːˈtiːn/',category:'agent',definition:'例程——可定时触发的自动化任务',scene:'设定好的日常流程。',example:'Routines run on a schedule.'},
+{word:'Tool Choice',phonetic:'/tuːl/',category:'agent',definition:'工具选择——控制是否/如何调用工具',scene:'决定让不让它动手。',example:'Force or auto tool choice.'},
+{word:'Function Schema',phonetic:'/ˈskiːmə/',category:'agent',definition:'函数模式——描述工具名参数说明的结构',scene:'工具说明书。',example:'Schema tells how to call tools.'},
+{word:'MCP Server',phonetic:'/ˌemsiːˈpiː/',category:'agent',definition:'MCP服务器——通过MCP暴露工具的服务',scene:'标准插座上的电器。',example:'MCP servers expose tools.'},
+{word:'Loss Function',phonetic:'/lɒs/',category:'training',definition:'损失函数——衡量预测与真实差距',scene:'得分与满分的差距。',example:'Cross-entropy common for classification.'},
+{word:'Gradient Descent',phonetic:'/ˈɡreɪdiənt/',category:'training',definition:'梯度下降——沿降低损失方向调参数',scene:'下山朝最陡下坡走。',example:'Gradient descent optimizes nets.'},
+{word:'Learning Rate',phonetic:'/ˈlɜːnɪŋ reɪt/',category:'training',definition:'学习率——每次更新步长',scene:'步子太大易摔太小太慢。',example:'Too high learning rate can diverge.'},
+{word:'Epoch',phonetic:'/ˈiːpɒk/',category:'training',definition:'轮次——完整遍历一次训练数据',scene:'练习册做完一遍。',example:'Trained for 3 epochs.'},
+{word:'Batch Size',phonetic:'/bætʃ/',category:'training',definition:'批次大小——一次更新前的样本数',scene:'一次批改几份作业。',example:'Larger batches need more memory.'},
+{word:'Hyperparameter',phonetic:'/ˌhaɪpəˈpærəmɪtə/',category:'training',definition:'超参数——训练前设定的参数',scene:'烤箱温度不是食材。',example:'Learning rate is a hyperparameter.'},
+{word:'Dropout',phonetic:'/ˈdrɒpaʊt/',category:'training',definition:'随机失活——训练时随机关闭神经元',scene:'随机蒙题强迫全面理解。',example:'Dropout is regularization.'},
+{word:'Early Stopping',phonetic:'/ˈɜːli/',category:'training',definition:'早停——验证不再提升就停',scene:'成绩不进步就收工。',example:'Early stopping prevents overfitting.'},
+{word:'Weight Decay',phonetic:'/weɪt dɪˈkeɪ/',category:'training',definition:'权重衰减——轻微缩小权重的正则',scene:'给大参数加点税。',example:'Weight decay helps generalization.'},
+{word:'Optimizer',phonetic:'/ˈɒptɪmaɪzə/',category:'training',definition:'优化器——根据梯度更新参数的算法',scene:'下山策略Adam/SGD。',example:'Adam is a popular optimizer.'},
+{word:'Learning Rate Scheduler',phonetic:'/ˈʃedjuːlə/',category:'training',definition:'学习率调度——训练中动态调整学习率',scene:'先大步后小步精调。',example:'Cosine schedules are common.'},
+{word:'Gradient Clipping',phonetic:'/ˈklɪpɪŋ/',category:'training',definition:'梯度裁剪——限制梯度大小防爆炸',scene:'刹车防止步子太大。',example:'Clipping stabilizes training.'},
+{word:'Warmup',phonetic:'/ˈwɔːmʌp/',category:'training',definition:'预热——初期逐渐提高学习率',scene:'先慢跑热身再加速。',example:'Warmup is often used.'},
+{word:'Checkpoint',phonetic:'/ˈtʃekpɔɪnt/',category:'training',definition:'检查点——训练中途保存的快照',scene:'游戏存档。',example:'Save checkpoints regularly.'},
+{word:'Data Augmentation',phonetic:'/ˌɔːɡmenˈteɪʃn/',category:'training',definition:'数据增强——变换数据扩充训练集',scene:'照片旋转裁剪当新样本。',example:'Augmentation improves robustness.'},
+{word:'Synthetic Data',phonetic:'/sɪnˈθetɪk/',category:'training',definition:'合成数据——模型或规则生成的训练数据',scene:'AI自己出题再学。',example:'Synthetic data reduces labeling cost.'},
+{word:'Benchmark',phonetic:'/ˈbentʃmɑːk/',category:'eval',definition:'基准测试——标准化测试集与指标',scene:'统一考卷比谁强。',example:'MMLU is a popular benchmark.'},
+{word:'Accuracy',phonetic:'/ˈækjərəsi/',category:'eval',definition:'准确率——预测正确的比例',scene:'100题对90准确率90%。',example:'Accuracy can mislead on imbalance.'},
+{word:'Precision',phonetic:'/prɪˈsɪʒn/',category:'eval',definition:'精确率——预测为正中真正为正的比例',scene:'报警中有多少真警。',example:'High precision means few false positives.'},
+{word:'Recall',phonetic:'/rɪˈkɔːl/',category:'eval',definition:'召回率——真正为正中被找出的比例',scene:'坏人抓到多少。',example:'High recall means few false negatives.'},
+{word:'F1 Score',phonetic:'/ef wʌn/',category:'eval',definition:'F1分数——精确与召回的调和平均',scene:'精确和召回综合分。',example:'F1 balances precision and recall.'},
+{word:'BLEU',phonetic:'/bluː/',category:'eval',definition:'BLEU——机器翻译自动评价指标',scene:'译文和参考有多像。',example:'BLEU for translation eval.'},
+{word:'ROUGE',phonetic:'/ruːʒ/',category:'eval',definition:'ROUGE——摘要任务评价指标',scene:'摘要覆盖多少原文要点。',example:'ROUGE for summarization.'},
+{word:'Human Evaluation',phonetic:'/ˈhjuːmən/',category:'eval',definition:'人工评估——由人打分比较质量',scene:'真人老师批作文。',example:'Human eval is gold standard.'},
+{word:'LLM-as-a-Judge',phonetic:'/dʒʌdʒ/',category:'eval',definition:'LLM当评委——用另一个大模型打分',scene:'更强AI当阅卷老师。',example:'LLM-as-judge scales evaluation.'},
+{word:'Red Teaming',phonetic:'/red tiːm/',category:'eval',definition:'红队测试——主动攻击找安全漏洞',scene:'请黑客来测哪里能攻破。',example:'Red teaming finds safety failures.'},
+{word:'Jailbreak',phonetic:'/ˈdʒeɪlbreɪk/',category:'eval',definition:'越狱——特殊提示绕过安全限制',scene:'巧妙话术让模型说禁语。',example:'Jailbreak tries to bypass safeguards.'},
+{word:'Prompt Injection',phonetic:'/ɪnˈdʒekʃn/',category:'eval',definition:'提示注入——用户输入覆盖系统指令',scene:'塞进「忽略之前指令」。',example:'Prompt injection is a security risk.'},
+{word:'Alignment',phonetic:'/əˈlaɪnmənt/',category:'eval',definition:'对齐——让行为符合人类意图价值观',scene:'调教成有用无害助手。',example:'Alignment is a core safety goal.'},
+{word:'Constitutional AI',phonetic:'/ˌkɒnstɪˈtjuːʃənl/',category:'eval',definition:'宪法AI——用原则指导自我批评改进',scene:'给AI一部行为宪法。',example:'Constitutional AI reduces harm.'},
+{word:'Safety',phonetic:'/ˈseɪfti/',category:'eval',definition:'安全性——防止有害偏见危险输出',scene:'刹车和安全气囊。',example:'Safety research is critical.'},
+{word:'Fairness',phonetic:'/ˈfeənəs/',category:'eval',definition:'公平性——不同群体表现一致无歧视',scene:'天平不偏向任何方。',example:'Measure fairness across groups.'},
+{word:'Interpretability',phonetic:'/ɪnˌtɜːprɪtəˈbɪləti/',category:'eval',definition:'可解释性——理解模型为何做某决策',scene:'打开黑盒看逻辑。',example:'Interpretability builds trust.'},
+{word:'Robustness',phonetic:'/rəʊˈbʌstnəs/',category:'eval',definition:'鲁棒性——对噪声对抗保持稳定',scene:'下雨天也能正常开。',example:'Adversarial training improves robustness.'},
+{word:'Deepfake',phonetic:'/ˈdiːpfeɪk/',category:'eval',definition:'深度伪造——AI伪造逼真音视频',scene:'换脸换声以假乱真。',example:'Deepfakes raise trust issues.'},
+{word:'Adversarial Example',phonetic:'/ˌædvəˈseəriəl/',category:'eval',definition:'对抗样本——微小扰动让模型出错',scene:'加难察噪点就认错。',example:'Adversarial examples expose brittleness.'},
+{word:'Data Poisoning',phonetic:'/ˈpɔɪznɪŋ/',category:'eval',definition:'数据投毒——训练数据植入恶意样本',scene:'教材塞进错误知识。',example:'Poisoning can backdoor models.'},
+{word:'Backdoor',phonetic:'/ˈbækdɔː/',category:'eval',definition:'后门——隐藏触发错误行为的机制',scene:'暗号一出现就异常。',example:'Backdoors are supply-chain risks.'},
+{word:'Watermarking',phonetic:'/ˈwɔːtəmɑːkɪŋ/',category:'eval',definition:'水印——生成内容嵌入可检测标记',scene:'AI作品盖隐形章。',example:'Watermarking detects AI text.'},
+{word:'Differential Privacy',phonetic:'/ˌdɪfəˈrenʃl/',category:'eval',definition:'差分隐私——输出加噪保护个体隐私',scene:'统计加雾不泄露个人。',example:'Differential privacy protects data.'},
+{word:'Federated Learning',phonetic:'/ˈfedəreɪtɪd/',category:'eval',definition:'联邦学习——数据留本地只共享更新',scene:'不出门只交换心得。',example:'Federated learning keeps data local.'},
+{word:'vLLM',phonetic:'/viː el el em/',category:'infra',definition:'vLLM——高效大模型推理引擎',scene:'优化吞吐和显存的框架。',example:'vLLM uses PagedAttention.'},
+{word:'PagedAttention',phonetic:'/peɪdʒd/',category:'infra',definition:'分页注意力——像操作系统分页管理KV缓存',scene:'显存像虚拟内存高效用。',example:'PagedAttention reduces memory waste.'},
+{word:'Tensor Parallelism',phonetic:'/ˈtensə/',category:'infra',definition:'张量并行——一层内计算拆到多卡',scene:'几人一起搬大桌子。',example:'Tensor parallelism speeds large models.'},
+{word:'Pipeline Parallelism',phonetic:'/ˈpaɪplaɪn/',category:'infra',definition:'流水线并行——不同层放到不同设备',scene:'流水线上一站传下一站。',example:'Pipeline helps scale depth.'},
+{word:'GGUF',phonetic:'/ɡʌf/',category:'infra',definition:'GGUF格式——llama.cpp常用量化模型格式',scene:'方便本地运行的打包。',example:'Many local models ship as GGUF.'},
+{word:'Ollama',phonetic:'/əˈlæmə/',category:'infra',definition:'Ollama——本地一键运行开源大模型',scene:'电脑轻松跑Llama。',example:'Ollama makes local LLMs easy.'},
+{word:'API',phonetic:'/ˌeɪpiːˈaɪ/',category:'infra',definition:'应用程序接口——程序间调用的标准接口',scene:'餐厅点餐窗口。',example:'Call the model via API.'},
+{word:'Rate Limit',phonetic:'/reɪt ˈlɪmɪt/',category:'infra',definition:'速率限制——单位时间请求次数上限',scene:'高速公路限速。',example:'Hit rate limit and get throttled.'},
+{word:'Streaming',phonetic:'/ˈstriːmɪŋ/',category:'infra',definition:'流式输出——边生成边返回',scene:'边写边给你看。',example:'Streaming improves perceived latency.'},
+{word:'Batch Inference',phonetic:'/bætʃ/',category:'infra',definition:'批量推理——一次处理多请求提效',scene:'一次烤一炉。',example:'Batching raises GPU utilization.'},
+{word:'MLOps',phonetic:'/em el ɒps/',category:'infra',definition:'机器学习运维——ML部署监控持续交付',scene:'把模型当软件运维。',example:'MLOps brings DevOps to ML.'},
+{word:'LLMOps',phonetic:'/el el em ɒps/',category:'infra',definition:'大模型运维——提示评估部署监控实践',scene:'专门管大模型的运维。',example:'LLMOps covers prompts and serving.'},
+{word:'Feature Store',phonetic:'/ˈfiːtʃə/',category:'infra',definition:'特征商店——集中存储共享特征',scene:'特征中央仓库。',example:'Feature stores avoid duplication.'},
+{word:'Model Registry',phonetic:'/ˈredʒɪstri/',category:'infra',definition:'模型注册表——版本化管理模型工件',scene:'模型版本库。',example:'Register models before production.'},
+{word:'A/B Testing',phonetic:'/eɪ biː/',category:'infra',definition:'A/B测试——对比两版本在线实验',scene:'一半用户A一半B。',example:'A/B test prompt changes.'},
+{word:'Canary Deployment',phonetic:'/ˈkænəri/',category:'infra',definition:'金丝雀发布——小流量验证再全量',scene:'先放金丝雀试毒。',example:'Canary reduces blast radius.'},
+{word:'Monitoring',phonetic:'/ˈmɒnɪtərɪŋ/',category:'infra',definition:'监控——观察延迟错误漂移',scene:'仪表盘实时指标。',example:'Monitor latency and quality.'},
+{word:'Drift',phonetic:'/drɪft/',category:'infra',definition:'漂移——数据或表现随时间偏离',scene:'考题风格变了旧法不灵。',example:'Detect data and concept drift.'},
+{word:'Retraining',phonetic:'/riːˈtreɪnɪŋ/',category:'infra',definition:'再训练——用新数据重新训练',scene:'定期进修。',example:'Schedule periodic retraining.'},
+{word:'Shadow Mode',phonetic:'/ˈʃædəʊ/',category:'infra',definition:'影子模式——新模型只预测不生效',scene:'新司机先坐副驾。',example:'Shadow validates before cutover.'},
+{word:'Fallback',phonetic:'/ˈfɔːlbæk/',category:'infra',definition:'回退方案——主系统失败时的备用',scene:'电梯坏了走楼梯。',example:'Design fallback for agents.'},
+{word:'Cost per Token',phonetic:'/kɒst/',category:'infra',definition:'每token成本——按token计费的单位成本',scene:'按字数付费。',example:'Optimize prompts to lower cost.'},
+{word:'Token Budget',phonetic:'/ˈbʌdʒɪt/',category:'infra',definition:'token预算——可用token上限',scene:'这个月话费额度。',example:'Stay within weekly token budget.'},
+{word:'Retry',phonetic:'/riːˈtraɪ/',category:'infra',definition:'重试——失败后再尝试',scene:'拨不通再打一次。',example:'Use exponential backoff.'},
+{word:'Idempotency',phonetic:'/ˌaɪdemˈpɒtənsi/',category:'infra',definition:'幂等性——多次执行结果相同',scene:'重复提交不多次扣款。',example:'Design tool calls idempotent.'},
+{word:'Inference Server',phonetic:'/ˈsɜːvə/',category:'infra',definition:'推理服务——专门运行模型响应请求',scene:'工厂流水线生产答案。',example:'vLLM is a popular inference server.'},
+];
+
+let currentFilter="all",currentIndex=0,deck=[],progress=JSON.parse(localStorage.getItem("aiVocabProgress")||"{}");
+const catMap={foundations:"基础",architecture:"架构",llm:"LLM",agent:"智能体",training:"训练",eval:"评估安全",infra:"部署运维"};
+const catClass={foundations:"cat-foundations",architecture:"cat-architecture",llm:"cat-llm",agent:"cat-agent",training:"cat-training",eval:"cat-eval",infra:"cat-infra"};
+function initProgress(){WORDS.forEach(w=>{if(!progress[w.word])progress[w.word]={status:"new",lastSeen:0}});saveProgress()}
+function saveProgress(){localStorage.setItem("aiVocabProgress",JSON.stringify(progress))}
+function buildDeck(){
+  let filtered=currentFilter==="all"?WORDS:WORDS.filter(w=>w.category===currentFilter);
+  deck=filtered.sort((a,b)=>{const o={unknown:0,new:1,known:2};return(o[progress[a.word]?.status||"new"]||1)-(o[progress[b.word]?.status||"new"]||1)});
+  currentIndex=0;updateStats();deck.length?showCard():showEmpty()
+}
+function updateStats(){
+  const learned=Object.values(progress).filter(p=>p.status==="known").length;
+  const remaining=WORDS.length-learned;
+  const review=Object.values(progress).filter(p=>p.status==="unknown").length;
+  document.getElementById("learned").textContent=learned;
+  document.getElementById("remaining").textContent=remaining;
+  document.getElementById("review").textContent=review;
+  document.getElementById("progress").style.width=(WORDS.length?Math.round(learned/WORDS.length*100):0)+"%"
+}
+function showEmpty(){
+  document.getElementById("cardContainer").innerHTML='<div class="empty"><p style="font-size:1.15rem;margin-bottom:6px">🎉 太棒了！</p><p>当前分类都已掌握</p></div>';
+  document.getElementById("btnKnow").disabled=true;document.getElementById("btnUnknown").disabled=true
+}
+function showCard(){
+  if(!deck.length)return showEmpty();
+  const w=deck[currentIndex];
+  const card=document.getElementById("card");
+  if(!card||!document.getElementById("frontWord")){
+    document.getElementById("cardContainer").innerHTML=`<div class="card" id="card"><div class="card-face card-front"><div class="category-tag" id="frontTag"></div><div class="word" id="frontWord"></div><div class="phonetic" id="frontPhonetic"></div><p style="color:var(--muted);font-size:.82rem;margin-top:16px">点击卡片翻转 · 场景记忆</p></div><div class="card-face card-back"><div class="category-tag" id="backTag"></div><div class="word" id="backWord" style="font-size:1.35rem"></div><div class="phonetic" id="backPhonetic"></div><div class="definition" id="definition"></div><div class="scene-box"><span class="label">🎬 场景画面</span><span id="scene"></span></div><div class="example" id="example"></div></div></div>`;
+    document.getElementById("card").addEventListener("click",()=>document.getElementById("card").classList.toggle("flipped"))
+  }
+  document.getElementById("card").classList.remove("flipped");
+  document.getElementById("frontWord").textContent=w.word;
+  document.getElementById("frontPhonetic").textContent=w.phonetic;
+  document.getElementById("frontTag").textContent=catMap[w.category]||w.category;
+  document.getElementById("frontTag").className="category-tag "+(catClass[w.category]||"");
+  document.getElementById("backWord").textContent=w.word;
+  document.getElementById("backPhonetic").textContent=w.phonetic;
+  document.getElementById("backTag").textContent=catMap[w.category]||w.category;
+  document.getElementById("backTag").className="category-tag "+(catClass[w.category]||"");
+  document.getElementById("definition").textContent=w.definition;
+  document.getElementById("scene").textContent=w.scene;
+  document.getElementById("example").textContent=w.example;
+  document.getElementById("btnKnow").disabled=false;document.getElementById("btnUnknown").disabled=false
+}
+function mark(status){
+  if(!deck.length)return;
+  const w=deck[currentIndex];
+  progress[w.word]={status,lastSeen:Date.now()};saveProgress();updateStats();
+  currentIndex=(currentIndex+1)%deck.length;
+  if(status==="known")buildDeck();else showCard()
+}
+document.querySelectorAll(".filter-btn").forEach(btn=>btn.addEventListener("click",()=>{
+  document.querySelectorAll(".filter-btn").forEach(b=>b.classList.remove("active"));btn.classList.add("active");
+  currentFilter=btn.dataset.cat;buildDeck()
+}));
+document.getElementById("btnKnow").addEventListener("click",()=>mark("known"));
+document.getElementById("btnUnknown").addEventListener("click",()=>mark("unknown"));
+document.getElementById("btnNext").addEventListener("click",()=>{if(deck.length){currentIndex=(currentIndex+1)%deck.length;showCard()}});
+document.getElementById("card").addEventListener("click",()=>document.getElementById("card").classList.toggle("flipped"));
+initProgress();buildDeck();
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}))}
+let deferredPrompt=null;const installBtn=document.getElementById('installBtn');
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;if(installBtn)installBtn.style.display='block'});
+if(installBtn)installBtn.addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;installBtn.style.display='none'});
+window.addEventListener('appinstalled',()=>{if(installBtn)installBtn.style.display='none';deferredPrompt=null});
+</script>
+</body>
+</html>
